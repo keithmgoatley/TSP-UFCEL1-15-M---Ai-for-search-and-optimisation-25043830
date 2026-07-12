@@ -1,70 +1,109 @@
-# UFCEL1_15_M_Ai for search and optimisation - 25043830
+# Solving the Traveling Salesman Problem with Hill Climbing and a Genetic Algorithm
+
+**Module:** UFCEL1-15-M — AI for Search and Optimisation  
+**Student:** Keith Goatley (25043830)
+
+---
 
 ## Overview
 
-The project looks at the **Travelling Salesman Problem** using a dataset of 50 cities. 
+This project implements and compares two search-based approaches to the Traveling Salesman Problem (TSP) on a 50-city instance:
 
-Two optimisation approaches are implemented and compared:
+1. **Random Restart Hill Climbing** with a **2-opt** neighbourhood. It's a single-solution local search that iteratively improves one candidate tour and restarts from a fresh random tour when the search stalls.
+2. **A Genetic Algorithm** — a population-based search using Order Crossover, swap mutation, and tournament selection.
 
-- Hill Climbing
-- Genetic Algorithm
+Both algorithms are evaluated on **solution quality** (tour distance), **computational efficiency** and **robustness**, and their **scalability** is compared on instances of 10, 20, 30, 40 and 50 cities.
 
-My aim was to evaluate both in terms of solution quality, the computational efficiency, any convergence behaviour, and their ability to scale. 
+### Headline result
 
-## Contents
+Over 10 independent seeded runs on the full 50-city instance:
 
-- `UFCEL1_15_M_Ai_for_search_and_optimisation_Resit_25043830.ipynb`
-- `cities.csv` 
-- `hill_climbing_best_route.txt` 
-- `genetic_algorithm_best_route.txt` 
-- `README.md` - project overview and usage instructions
+| Algorithm | Mean distance | Std dev | Best | Mean time |
+|---|---|---|---|---|
+| Random Restart Hill Climbing (2-opt) | **589.65** | 12.91 | 573.06 | ~2.1 s |
+| Genetic Algorithm | 700.78 | 57.15 | 598.83 | ~15.4 s |
 
-## Structure
+The difference is statistically significant under both Welch's t-test (p = 0.000137) and the Mann-Whitney U test (p = 0.000440). Hill Climbing wins on quality, speed and consistency — despite using roughly one fifth of the fitness-evaluation budget.
 
-The notebook includes the following stages:
-- Loading and visualising the city dataset.
-- Defining the route distance objective function.
-- Implementing Hill Climbing using a 2-opt style neighbourhood search.
-- Implementing a Genetic Algorithm for population-based optimisation.
-- Plotting the best route found by each algorithm.
-- Saving the best route from each algorithm to external text files.
-- Running scalability tests on different problem sizes.
+---
 
-## How to Run
+## Repository structure
 
-- Download or clone the repository.
-- Open the notebook in **Google Colab** or **Jupyter Notebook**.
-- Add the `cities.csv` in the same working directory as the notebook.
-- Run the notebook cells in order from top to bottom.
-- View the route visualisations, and saved route files.
+```
+.
+├── README.md                                    Project documentation
+├── UFCEL1_15_M_Ai_for_search_and_optimisation_Resit_25043830.ipynb
+│                                                Main notebook (all code)
+├── cities.csv 
+├── hill_climbing_best_route.txt             Best tour found by Hill Climbing
+├── genetic_algorithm_best_route.txt         Best tour found by the GA
+├── scalability_results.csv                  Raw scalability experiment data
+└── scalability_comparison.png               Scalability comparison chart
+   
+```
 
-## Outputs
+---
 
-Running the notebook produces:
+## Setup
 
-- the visualisation of the 50 city locations
-- the best-route plot for Hill Climbing
-- the best-route plot for the Genetic Algorithm
-- a saved route text files for both methods
-- the scalability comparison results and plots
+**Requirements:** Python 3.9+ and Jupyter.
 
-## Scalability Testing
+```bash
+# Clone the repository
+git clone <repo-url>
+cd <repo-name>
 
-The project tests both algorithms on subsets of the dataset with:
+# Install dependencies
+pip install numpy pandas matplotlib scipy jupyter
+```
 
-- 10 cities
-- 20 cities
-- 30 cities
-- 40 cities
-- 50 cities
+| Library | Purpose |
+|---|---|
+| NumPy | Numerical operations and distance calculations |
+| pandas | Loading `cities.csv`, tabulating results |
+| Matplotlib | Route plots, convergence curves, comparison charts |
+| SciPy | Welch's t-test and Mann-Whitney U test |
 
-This then helps compare how each method performs as problem size increases.
+---
 
-## Purpose
+## Usage
 
-The projct shows the application of search and optimisation techniques to the TSP. It shows outputs by saving final routes created by both algorithms. 
+```bash
+jupyter notebook UFCEL1_15_M_Ai_for_search_and_optimisation_Resit_25043830.ipynb
+```
 
-------------
+Run the cells in order. The notebook is organised as:
 
-Keith Goatley  
-Student Number: 25043830
+| Section | Contents |
+|---|---|
+| Data loading | Reads `cities.csv`, plots the 50 city locations |
+| Distance calculation | Euclidean distance and closed-tour objective function |
+| Stage 1: Hill Climbing | Baseline swap neighbourhood, then the 2-opt refinement |
+| Hill Climbing tuning | Stall-limit sweep with seeded repeats |
+| Stage 2: Genetic Algorithm | OX crossover, swap mutation, tournament selection, elitism |
+| GA tuning | Mutation-rate and population-size screening |
+| Scalability | Both algorithms at 10, 20, 30, 40 and 50 cities |
+| Statistical testing | Welch's t-test and Mann-Whitney U over 10 seeded runs |
+| Conclusions | Discussion of results and deployment recommendations |
+
+**Note on paths:** the notebook reads `cities.csv` and writes its route files relative to the working directory. If you move the data into `data/`, update the `load_cities()` call accordingly.
+
+### Reproducibility
+
+All stochastic experiments are seeded (`SEED = 42`, with each repeat run using `SEED + run_index`), so re-running the notebook reproduces the reported figures exactly.
+
+---
+
+## Design decisions
+
+**Why I chose Random Restart Hill Climbing?** Simulated Annealing is sensitive to its cooling schedule, and Tabu Search adds memory overhead plus two further hyperparameters. Random restarts escape local optima with a single, intuitive hyperparameter, which is the stall limit. This makes the exploration/exploitation balance easy to control and analyse.
+
+**Why I west with 2-opt over a swap neighbourhood?** The swap-based implementation produced tours with visible self-crossings, capping quality at 793.32. The 2-opt move reverses a segment between two edges, which removes crossings directly. Under an identical iteration budget this improved the best tour to 603.59 — a 23.9% gain from changing the neighbourhood alone.
+
+**Why Order Crossover and tournament selection?** Single-point crossover applied to a permutation produces invalid tours, and roulette-wheel selection requires converting a minimisation objective into a maximisable fitness. OX preserves permutation validity by construction, and tournament selection operates directly on raw distances.
+
+---
+
+## Licensing
+
+The `cities.csv` dataset was provided by the module for this assessment. The dependencies (NumPy, pandas, Matplotlib, SciPy) are released under permissive BSD-style licences permitting academic and commercial use.
